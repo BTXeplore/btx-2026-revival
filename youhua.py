@@ -47,5 +47,5 @@ M_fused = M2 @ M1
 final_smart_result = M_fused @ vectors
 
 time_smart = time.time() - start_time
-print(f"✅ 算子融合耗时: {time_smart:.5f} 秒 (融合了公式，只进行一次操作!！)")
-print(f"🚀 速度提升了: {time_dumb / time_smart:.2f} 倍！")
+print(f"✅ 算子融合耗时: {time_smart:.5f} 秒 (融合了公式，只进行一次操作!q)")
+print(f"🚀 速度提升了: {time_dumb / time_smart:.2f} 倍")
