@@ -58,14 +58,14 @@ quiet_signals = signals - noise_offset
 # axis=1 表示沿着“时间”维度进行塌缩
 # 这在计算架构中叫 Reduction (规约运算)
 energy_per_channel = np.sum(quiet_signals, axis=1)
-print(f"\n📊 每个频段的能量分布 (Shape: {energy_per_channel.shape}):")
+print(f"\n📊 每个频段能量分布 (Shape: {energy_per_channel.shape}):")
 print(energy_per_channel)
 
 # 4. 【张量点积】最硬核的优化：批量增益控制
 # 假设我们要给 3 个频道分别乘以不同的增益系数 [1.0, 2.0, 0.5]
 gains = np.array([1.0, 2.0, 0.5])
 
-# 为了能和 (3, 4, 2) 的张量相乘，我们需要把 gains 的维度对齐
+# 为了能和 (3, 4, 2) 的张量相乘，我们要把 gains 的维度对齐
 # (3,) -> (3, 1, 1) 这叫维度扩展 (NewAxis)
 # 这样 gains 就会沿着时间轴和传感器轴自动“克隆”
 gains_reshaped = gains[:, np.newaxis, np.newaxis]
