@@ -58,7 +58,7 @@ quiet_signals = signals - noise_offset
 # axis=1 表示沿着“时间”维度进行塌缩
 # 这在计算架构中叫 Reduction (规约运算)
 energy_per_channel = np.sum(quiet_signals, axis=1)
-print(f"\n📊 每个频段能量分布 (Shape: {energy_per_channel.shape}):")
+print(f"\n📊 每个频q段能量分布 (Shape: {energy_per_channel.shape}):")
 print(energy_per_channel)
 
 # 4. 【张量点积】最硬核的优化：批量增益控制
