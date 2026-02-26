@@ -34,7 +34,7 @@ gains = np.array([1.0, 2.0, 0.5])
 gains_reshaped = gains[:, np.newaxis, np.newaxis]
 final_output = quiet_signals * gains_reshaped
 
-print(f"\n🚀 增益调整后的最终信号 (第一频段样例):")
+print(f"\n🚀 增益调整后的最终信号 (第一频段例):")
 print(final_output[0]) # 只打印第一个频道看看import numpy as np
 
 # ==========================================

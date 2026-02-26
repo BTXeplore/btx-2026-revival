@@ -31,7 +31,7 @@ step1_result = M1 @ vectors
 final_dumb_result = M2 @ step1_result
 
 time_dumb = time.time() - start_time
-print(f"❌ 分步计算耗时: {time_dumb:.5f} 秒 (这就像是把猪肉拿出来切片，再放回冰箱，再拿出来绞)")
+print(f"❌ 分步计算耗时: {time_dumb:.5f} 秒 (这就像是把猪肉片，再放回冰，再拿出来绞)")
 
 # ------------------------------------------
 # ✅ 架构师逻辑（算子融合）：先融合理论，再发兵！
@@ -47,5 +47,5 @@ M_fused = M2 @ M1
 final_smart_result = M_fused @ vectors
 
 time_smart = time.time() - start_time
-print(f"✅ 算子融合耗时: {time_smart:.5f} 秒 (融合了公式，只行一次作)")
+print(f"✅ 算子融合耗时: {time_smart:.5f} 秒 (融合了公式，只一次作)")
 print(f"🚀 速度提升了: {time_dumb / time_smart:.2f} ")

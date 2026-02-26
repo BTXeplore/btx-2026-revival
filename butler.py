@@ -2,14 +2,15 @@ import time, os, subprocess
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-# --- ⚡️ 2.2 防护起航版 ⚡️ ---
+# --- ⚡️ 2.3 路径绝对对齐版 ⚡️ ---
 TOKEN = os.getenv("MY_GITHUB_TOKEN")
 USER = "BTXeplore"
 REPO = "btx-2026-revival"
 
+# 获取脚本所在的【绝对路径】，确保传感器点位 100% 正确
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 if not TOKEN:
-    print("❌ [严重预警] 未检测到黄金钥匙 (MY_GITHUB_TOKEN)！请在系统环境变量中检查。")
-    # 为了防止 None 导致报错，我们先占个位，但还是会失败，提醒你检查
     TOKEN = "MISSING_TOKEN"
 
 MAGIC_URL = f"https://{USER}:{TOKEN}@github.com/{USER}/{REPO}.git"
@@ -17,44 +18,43 @@ MAGIC_URL = f"https://{USER}:{TOKEN}@github.com/{USER}/{REPO}.git"
 
 class ButlerHandler(FileSystemEventHandler):
     def on_modified(self, event):
-        if any(x in event.src_path for x in [".git", ".venv", "__pycache__", "butler.py", "~"]):
+        # ⚡️ 调试脉冲：只要有任何动静，先在终端打印，证明传感器活着
+        # print(f"信号探测中: {event.src_path}")
+
+        if any(x in event.src_path for x in [".git", ".venv", "__pycache__", "butler.py", "~", ".idea"]):
             return
+
         if not event.is_directory:
             filename = os.path.basename(event.src_path)
-            print(f"\n[脉冲捕捉] 波段 '{filename}' 震动中...")
+            print(f"\n[脉冲捕捉] 波段 '{filename}' 强烈震动中...")
 
             try:
-                # 1. 强制加入
-                subprocess.run(["git", "add", "."], check=True)
-                # 2. 联觉记录 (增加 encoding 参数修复 GBK 报错)
+                subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
                 msg = f"联觉同步：'{filename}' 产生共鸣。"
                 subprocess.run(["git", "commit", "-m", msg],
-                               capture_output=True, text=True, encoding='utf-8', errors='ignore')
+                               capture_output=True, text=True, encoding='utf-8', errors='ignore', cwd=BASE_DIR)
 
-                # 3. 【核心爆破】：强制禁用代理，直接穿刺
-                print(f"正在强力穿刺云端，跳过所有本地代理...")
+                print(f"正在强力穿刺云端...")
                 cmd = [
-                    "git",
-                    "-c", "http.proxy=",  # ⚡️ 强制取消 http 代理
-                    "-c", "https.proxy=",  # ⚡️ 强制取消 https 代理
-                    "-c", "credential.helper=",
+                    "git", "-c", "http.proxy=", "-c", "https.proxy=", "-c", "credential.helper=",
                     "push", MAGIC_URL, "main", "--force"
                 ]
-                subprocess.run(cmd, check=True)
+                subprocess.run(cmd, check=True, cwd=BASE_DIR)
                 print(f"✅ 成功！！琥珀色的绿格子已在云端亮起！")
             except Exception as e:
                 print(f"❌ 干扰预警：{e}")
 
 
 if __name__ == "__main__":
-    # 打印一下，确认钥匙是否读到 (只显示前4位保护安全)
     status = "已就绪" if TOKEN != "MISSING_TOKEN" else "未加载"
-    print(f"🔑 钥匙状态: {status} | 目标: {REPO}")
+    print(f"🔑 钥匙状态: {status}")
+    print(f"👁️ 传感器监控目录: {BASE_DIR}")  # ⚡️ 关键：确认这里是不是你存放 youhua.py 的地方！
 
     event_handler = ButlerHandler()
     observer = Observer()
-    observer.schedule(event_handler, ".", recursive=False)
-    print("=" * 50 + "\n🕵️ 联觉管家 2.2 (强制穿刺版) 已上线\n" + "=" * 50)
+    # 增加 recursive=True，防止文件嵌套导致的扫描不到
+    observer.schedule(event_handler, BASE_DIR, recursive=True)
+    print("=" * 50 + "\n🕵️ 联觉管家 2.3 (路径对齐版) 已上线\n" + "=" * 50)
     observer.start()
     try:
         while True: time.sleep(1)
