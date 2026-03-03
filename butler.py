@@ -1,63 +1,66 @@
-import time, os, subprocess
-from watchdog.observers import Observer
+import os
+import subprocess
+import time
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
-# --- ⚡️ 2.3 路径绝对对齐版 ⚡️ ---
-TOKEN = os.getenv("MY_GITHUB_TOKEN")
-USER = "BTXeplore"
-REPO = "btx-2026-revival"
-
-# 获取脚本所在的【绝对路径】，确保传感器点位 100% 正确
+# --- ⚡️ 2.4 安全提交版 ⚡️ ---
+# 默认推送到当前分支，不再强制 push，不把 token 明文拼进 URL。
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+EXCLUDED_HINTS = {".git", ".venv", "__pycache__", "butler.py", "~", ".idea"}
 
-if not TOKEN:
-    TOKEN = "MISSING_TOKEN"
 
-MAGIC_URL = f"https://{USER}:{TOKEN}@github.com/{USER}/{REPO}.git"
+def run_git(cmd: list[str], *, check: bool = True) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, cwd=BASE_DIR, capture_output=True, text=True, check=check)
+
+
+def current_branch() -> str:
+    result = run_git(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+    return result.stdout.strip()
 
 
 class ButlerHandler(FileSystemEventHandler):
     def on_modified(self, event):
-        # ⚡️ 调试脉冲：只要有任何动静，先在终端打印，证明传感器活着
-        # print(f"信号探测中: {event.src_path}")
-
-        if any(x in event.src_path for x in [".git", ".venv", "__pycache__", "butler.py", "~", ".idea"]):
+        if any(hint in event.src_path for hint in EXCLUDED_HINTS):
             return
 
-        if not event.is_directory:
-            filename = os.path.basename(event.src_path)
-            print(f"\n[脉冲捕捉] 波段 '{filename}' 强烈震动中...")
+        if event.is_directory:
+            return
 
-            try:
-                subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
-                msg = f"联觉同步：'{filename}' 产生共鸣。"
-                subprocess.run(["git", "commit", "-m", msg],
-                               capture_output=True, text=True, encoding='utf-8', errors='ignore', cwd=BASE_DIR)
+        filename = os.path.basename(event.src_path)
+        print(f"\n[脉冲捕捉] 文件 '{filename}' 发生改动")
 
-                print(f"正在强力穿刺云端...")
-                cmd = [
-                    "git", "-c", "http.proxy=", "-c", "https.proxy=", "-c", "credential.helper=",
-                    "push", MAGIC_URL, "main", "--force"
-                ]
-                subprocess.run(cmd, check=True, cwd=BASE_DIR)
-                print(f"✅ 成功！！琥珀色的绿格子已在云端亮起！")
-            except Exception as e:
-                print(f"❌ 干扰预警：{e}")
+        try:
+            run_git(["git", "add", "."])
+            msg = f"联觉同步：'{filename}' 产生共鸣。"
+            commit_result = run_git(["git", "commit", "-m", msg], check=False)
+
+            if commit_result.returncode != 0:
+                if "nothing to commit" in commit_result.stdout + commit_result.stderr:
+                    print("ℹ️ 没有可提交变更，跳过 push。")
+                    return
+                raise RuntimeError(commit_result.stderr.strip() or commit_result.stdout.strip())
+
+            branch = current_branch()
+            run_git(["git", "push", "origin", branch])
+            print(f"✅ 提交并推送成功：origin/{branch}（真实提交会计入小绿格）")
+
+        except Exception as exc:
+            print(f"❌ 提交流程失败：{exc}")
 
 
 if __name__ == "__main__":
-    status = "已就绪" if TOKEN != "MISSING_TOKEN" else "未加载"
-    print(f"🔑 钥匙状态: {status}")
-    print(f"👁️ 传感器监控目录: {BASE_DIR}")  # ⚡️ 关键：确认这里是不是你存放 youhua.py 的地方！
+    print(f"👁️ 监控目录: {BASE_DIR}")
+    print("🛡️ 运行模式: 安全提交（不强推、不明文 token）")
 
-    event_handler = ButlerHandler()
     observer = Observer()
-    # 增加 recursive=True，防止文件嵌套导致的扫描不到
-    observer.schedule(event_handler, BASE_DIR, recursive=True)
-    print("=" * 50 + "\n🕵️ 联觉管家 2.3 (路径对齐版) 已上线\n" + "=" * 50)
+    observer.schedule(ButlerHandler(), BASE_DIR, recursive=True)
+    print("=" * 50 + "\n🕵️ 联觉管家 2.4（安全提交版）已上线\n" + "=" * 50)
+
     observer.start()
     try:
-        while True: time.sleep(1)
+        while True:
+            time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
